@@ -1,0 +1,102 @@
+-- What days and times do we tend to be busiest? How many pizzas are we making during peak periods
+
+SELECT DISTINCT orders.order_id,
+                DAY(date) AS Day_,
+                quantity,
+                pizza_id,
+                TIME, date, MONTH(date) AS MONTH
+FROM orders
+JOIN order_details ON orders.order_id = order_details.order_id
+ORDER BY quantity DESC, date;
+
+
+SELECT DISTINCT orders.order_id,
+                DAY(date) AS Day_,
+                quantity
+FROM orders
+JOIN order_details ON orders.order_id = order_details.order_id
+;
+
+SELECT quantity AS Order_Quantity,
+       DAY(date) AS Day_of_Month,
+       MONTH(date) AS Month_,
+       TIME
+FROM orders
+JOIN order_details ON orders.order_id = order_details.order_id
+ORDER BY quantity DESC,
+         MONTH(date);
+
+-- Best and Worst Selling Pizzas
+
+SELECT price,
+       name AS Pizza_,category,
+       quantity AS Quantity_,
+       quantity * price AS Total_Order_Cost,
+       SIZE AS Pizza_size
+FROM pizzas
+JOIN order_details ON pizzas.pizza_id = order_details.pizza_id
+JOIN pizza_types ON pizzas.pizza_type_id = pizza_types.pizza_type_id
+ORDER BY quantity DESC,
+         Total_Order_Cost DESC;
+
+-- Average Order Value
+
+SELECT DISTINCT order_id AS Order_,
+                quantity AS Quantity_,
+                cast(Price AS float) AS Price_,
+                quantity * cast(price AS float) AS Total_Order_Cost
+FROM order_details
+JOIN pizzas ON order_details.pizza_id = pizzas.pizza_id
+ORDER BY Quantity_ DESC;
+
+
+SELECT sum((quantity * cast(price AS float)))/ COUNT(order_id) AS Avg_Total_Order_Cost,
+       sum(quantity * cast(price AS float)) AS Total_Cost
+FROM order_details
+JOIN pizzas ON order_details.pizza_id = pizzas.pizza_id;
+
+-- Best selling pizza categories
+
+SELECT category,
+       sum(quantity) AS Total_Sales
+FROM pizza_types
+JOIN pizzas ON pizza_types.pizza_type_id = pizzas.pizza_type_id
+JOIN order_details ON pizzas.pizza_id = order_details.pizza_id
+GROUP BY category;
+
+-- Worst Selling Pizzas
+
+SELECT top 5 sum(quantity) Total_Quantity,
+             pt.name
+FROM pizza_types pt
+JOIN pizzas p ON pt.pizza_type_id = p.pizza_type_id
+JOIN order_details ordts ON p.pizza_id = ordts.pizza_id
+JOIN orders ord ON ordts.order_id = ord.order_id
+GROUP BY pt.name
+ORDER BY SUM(quantity) ASC;
+
+-- Best Selling Pizzas
+
+SELECT top 5 sum(quantity) Total_Quantity,
+             pt.name
+FROM pizza_types pt
+JOIN pizzas p ON pt.pizza_type_id = p.pizza_type_id
+JOIN order_details ordts ON p.pizza_id = ordts.pizza_id
+JOIN orders ord ON ordts.order_id = ord.order_id
+GROUP BY pt.name
+ORDER BY SUM(quantity) DESC;
+
+
+ALTER TABLE dbo.pizzas
+ALTER COLUMN price float;
+
+-- Overview
+
+SELECT sum(quantity) Pizzas_Sold,
+       COUNT(DISTINCT ord.order_id) Total_Orders,
+       SUM(price)/ COUNT(DISTINCT ordts.order_id) Avg_Price_Per_Order,
+       sum(price * quantity) AS Revenue
+FROM pizza_types pt
+JOIN pizzas p ON pt.pizza_type_id = p.pizza_type_id
+JOIN order_details ordts ON p.pizza_id = ordts.pizza_id
+JOIN orders ord ON ordts.order_id = ord.order_id;
